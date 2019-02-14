@@ -1,5 +1,6 @@
 # SyncServer
 Server for project VisualMath.ru
+
 Используемые технологии:
 
 1. AJAX
