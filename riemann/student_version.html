@@ -1,0 +1,241 @@
+<html>
+<head>
+<style>
+
+#plotter{
+    overflow: hidden;
+    width: 850px;
+    height: 550px;
+}
+
+#layer {
+    z-index: 2;
+    position: absolute;
+}
+
+#plot{
+    width: 800px;
+    height: 500px;
+    position: relative;
+}
+
+</style>
+<script src='SkeletonWithControl.js' charSet = 'utf-8'></script>
+<meta charset="utf-8">
+</head>
+<body>
+<div id = 'plotter'>
+	<div id= 'plot'></div>
+  <canvas id = 'layer'></canvas>
+</div>
+
+<form name="publish">
+  <input type="submit" id="drawbutton" value="Презентация" />
+</form>
+
+<div id="range1"></div>
+<div id="text1"></div>
+<div id="range2"></div>
+<div id="text2"></div>
+<div id="subscribe"></div>
+<script src="riemann.js"></script>
+<script charSet='utf-8'>
+
+function GetString(obj) {
+    var str = 'angle:' + String(obj.angle) + ',';
+    return str;
+}
+
+function parse(str, key) {
+  var start = str.indexOf(key) + key.length + 1;
+  var subs = str.substring(
+    start, str.indexOf(',', start));
+  return subs
+}
+
+function GetObject(str) {
+    var obj = {};
+    obj.riemann = Number.parseInt(parse(str, 'riemann'));
+    obj.range = Number.parseFloat(parse(str, 'range'));
+    obj.lrange = Number.parseFloat(parse(str, 'lrange'));
+    obj.activate = Number.parseInt(parse(str, 'activate'));
+    return obj;
+}
+
+function ChangeForm(form, url) {
+
+  function sendMessage(message) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.send(message);
+  }
+
+  form.onsubmit = function() {
+    sendMessage("empty");
+    Riemann(N);
+    return false;
+  };
+
+
+}
+
+
+function UserControl(elem, url) {
+
+  function change_controls(message) {
+    if (message != "empty") {
+      obj = GetObject(message);
+      if (obj.activate) {
+        range.value = obj.range;
+        lrange.value = obj.lrange;
+        xchange();
+      }
+      if (obj.riemann == 1) {
+        Riemann(N);
+      }
+    }
+  }
+
+  function subscribe() {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+      if (this.readyState != 4) return;
+
+      if (this.status == 200) {
+        if (this.responseText) {
+          change_controls(this.responseText);
+        subscribe();
+      }
+        return;
+      }
+
+      if (this.status != 502) {
+        change_controls(this.statusText);
+      }
+
+      setTimeout(subscribe, 1000);
+    }
+    xhr.open("GET", url, true);
+    xhr.send();
+  }
+
+  subscribe();
+
+}
+
+var textRiemann = '';
+  var N = 1000;
+  var container = new PlotContainer('plot');
+  var plot = container.addPlot({left: 0, right: 1, top: N, bottom: 0, width: 800, height: 500, zoom: false});
+  var div = document.querySelector('#plotter');
+  var svg = document.querySelector('#plot');
+  var canvas = document.querySelector('#layer');
+  var ctx = layer.getContext('2d');
+
+  var TOP = div.getBoundingClientRect().top;
+  var LEFT = div.getBoundingClientRect().left;
+
+  canvas.style.top = TOP;
+  canvas.style.left = LEFT;
+  canvas.width = 800;
+  canvas.height = 500;
+  ctx.fillStyle = 'brown';
+  var controls = d3.select(document.body)
+                   .append('div')
+                   .style('display','inline-block')
+                   .style('position','absolute')
+                   .style('top','30px')
+                   .style('right','0px')
+
+
+controls.append('p')
+        .html(textRiemann);
+
+	var rng1 = '<input type="range" min="0" max="0.5" value="0.2" step = "0.01" id="myRange">';
+	var txt1 = '<p> Радиус: 0.2</p>'
+	var rng2 = '<input type="range" min="1" max="900" value="400" step = "1" id="lineRange" >';
+	var txt2 = '<p> Высота: 400</p>'
+
+	range1.innerHTML = rng1;
+	text1.innerHTML = txt1;
+	range2.innerHTML = rng2;
+	text2.innerHTML = txt2;
+
+	var range = document.getElementById('myRange');
+	range.addEventListener('change', xchange);
+	var lrange = document.getElementById('lineRange');
+	lrange.addEventListener('change', xchange);
+
+function xchange() {
+    document.getElementById('text1').innerHTML = 'Радиус: ' + range.value;
+    document.getElementById('text2').innerHTML = 'Высота: ' + lrange.value;
+    Update();
+}
+
+
+
+	var shArea = plot.shadedArea(function (x) {
+		return 10000;
+	}, {
+		right: 0.6,
+		left: 0.4,
+		color: 7,
+		axe: 'x'
+	});
+	var line = plot.addLine(0, 400, 1, 400);
+	function Update() {
+		var val = parseFloat(document.getElementById("myRange").value);
+		var hline = parseInt(document.getElementById("lineRange").value);
+		plot.remove(shArea);
+		plot.remove(line);
+		line = plot.addLine(0, hline, 1, hline);
+		if (pointIsLiving)
+			plot.remove(ppp);
+
+		var h = hline + 20;
+		var added = 1;
+		while (added) {
+			for (var j = parseInt(h * (0.5 - val)); (j < h * (0.5 + val)) && added; ++j) {
+				if (gcd(j, h) == 1) {
+					ppp = plot.addPoint(j/h, h);
+					ppp.setColor(20);
+					added = 0;
+					pointIsLiving = 1;
+					}
+			}
+			h++;
+		}
+		shArea = plot.shadedArea(function (x) {
+		return 10000;
+		}, {
+			right: 0.5 + val,
+			left: 0.5 - val,
+			color: 7,
+			axe: 'x'
+		});
+
+	}
+
+  var Scatter = {
+      context: ctx,
+      X: function(x){return x*800},
+      Y: function(y){return ((N - y)/N)*500}
+  }
+
+
+
+  Scatter.addPoint = canvasPoint.bind(Scatter);
+  Scatter.removePoint =  canvasClear.bind(Scatter,1,1);
+  Scatter.clear =  canvasClear.bind(Scatter,800,500,0,0);
+
+	var ppp = plot.addPoint(0.5, 100);
+	var pointIsLiving = 0;
+	ppp.setSize("small");
+	plot.remove(ppp);
+
+  new ChangeForm(document.forms.publish, 'publish');
+  new UserControl(document.getElementById('subscribe'), 'subscribe?random=' + Math.random());
+
+</script>
+</body>
+</html>
