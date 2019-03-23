@@ -1,0 +1,44 @@
+<!doctype html>
+
+<html>
+	<meta charset="utf-8">
+<head>
+	<title>Прямая y = kx</title>
+	<style>
+		.stest { width: 15em; }
+		body { height: 100%; }
+
+	.left_plot {
+		position: fixed;
+		margin-top:130px;
+		margin-left:30px;
+	}
+	</style>
+</head>
+
+<style>
+
+</style>
+<body lang = 'en'>
+
+	<form name="publish">
+    <input type="submit" id="drawbutton" value="По часовой на 15 градусов (-15)" />
+		<input type="submit" id="drawbutton2" value="Против часовой на 15 градусов (+15)" />
+  </form>
+
+	<div id="subscribe">
+  </div>
+
+	<div id="leftplot" class="left_plot"></div>
+
+	<script src="SkeletonWithControl.js"></script>
+	<script src = "line_tutor.js" type = "text/javascript"></script>
+	<script>
+		  new UserControl(document.getElementById('subscribe'), 'subscribe?random=' + Math.random());
+	</script>
+
+
+</body>
+
+
+</html>
